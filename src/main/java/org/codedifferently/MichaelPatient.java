@@ -27,7 +27,7 @@ public class MichaelPatient {
         public void setCheckedIn(boolean checkedIn) {
             this.isCheckedIn = checkedIn;
         }
-
+//
         @Override
         public String toString() {
             return "ID: " + ID +
