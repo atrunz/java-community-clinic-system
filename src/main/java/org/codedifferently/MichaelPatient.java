@@ -11,7 +11,7 @@ public class MichaelPatient {
         this.ID=ID;
         this.isCheckedIn=false;
 
-
+//
     }
 
     public void setName(String name) {
