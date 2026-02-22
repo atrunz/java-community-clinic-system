@@ -1,6 +1,6 @@
 package org.codedifferently;
 
-public class MichaelPatient {
+public class  MichaelPatient {
 
     private String name;
     private String ID;
@@ -23,6 +23,6 @@ public class MichaelPatient {
         this.ID=ID;
 
     }
-//
-     //
+
+
 }
