@@ -27,8 +27,8 @@ public class LanClinicApp {
             System.out.println("6 Cancel Appointment");
             System.out.println("7 View Schedule");
             System.out.println("8 Daily Report");
-            System.out.println("9 Exit");
-            System.out.println("10 Complete Appointment");
+            System.out.println("9 Complete Appointment");
+            System.out.println("10 Exit");
 
 
             System.out.println("Please Select a choice: ");
@@ -77,10 +77,6 @@ public class LanClinicApp {
                     break;
 
                 case "9":
-                    running = false;
-                    break;
-
-                case "10":
                     try {
                         System.out.println("=============================");
                         System.out.print("Patient ID: ");
@@ -95,6 +91,10 @@ public class LanClinicApp {
                     } catch(Exception e) {
                         System.out.println("Invalid format.");
                     }
+                    break;
+
+                case "10":
+                    running = false;
                     break;
             }
         }

@@ -163,7 +163,7 @@ public class LanClinicSystem {
 
         try {
 
-            System.out.print("Enter date/time: ");
+            System.out.print("Enter date/time (yyyy-MM-dd HH:mm): ");
             LocalDateTime time =
                     LocalDateTime.parse(sc.nextLine(), formatter);
 
