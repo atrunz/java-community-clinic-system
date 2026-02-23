@@ -31,8 +31,7 @@ public class LanClinicApp {
             System.out.println("10 Complete Appointment");
 
 
-            System.out.print("Choice: ");
-            System.out.println("===========================================1");
+            System.out.println("Please Select a choice: ");
             String choice = sc.nextLine();
 
             switch(choice) {
