@@ -1,32 +1,32 @@
 package org.codedifferently;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Scanner;
+import java.util.*;
 
 public class LanClinicSystem {
+
     private ArrayList<LanPatient> patients;
     private ArrayList<LanAppointment> appointments;
+    private HashMap<LocalDateTime, Queue<String>> waitlistMap;
 
     public LanClinicSystem() {
         patients = new ArrayList<>();
         appointments = new ArrayList<>();
+        waitlistMap = new HashMap<>();
     }
 
-    // ----------------- PATIENT METHODS -----------------
+    // ---------------- PATIENT ----------------
 
     public void addPatient(String name) {
-        LanPatient patient = new LanPatient(name);
-        patients.add(patient);
-        System.out.println("Patient added successfully. ID: " + patient.getID());
+        LanPatient p = new LanPatient(name);
+        patients.add(p);
+        System.out.println("Patient added. ID: " + p.getID());
     }
 
     public void viewAllPatients() {
         if (patients.isEmpty()) {
-            System.out.println("No patients in system.");
+            System.out.println("No patients.");
             return;
         }
         for (LanPatient p : patients) {
@@ -34,161 +34,237 @@ public class LanClinicSystem {
         }
     }
 
-    public LanPatient searchPatient(String idOrName) {
+    public LanPatient searchPatient(String input) {
         for (LanPatient p : patients) {
-            if (p.getID().equalsIgnoreCase(idOrName) || p.getName().equalsIgnoreCase(idOrName)) {
+            if (p.getID().equalsIgnoreCase(input)
+                    || p.getName().equalsIgnoreCase(input)) {
                 return p;
             }
         }
         return null;
     }
 
-    public void checkInPatient(String idOrName) {
-        LanPatient p = searchPatient(idOrName);
-        if (p != null) {
-            if (!p.isCheckedIn()) {
-                p.checkIn();
-                System.out.println("Patient " + p.getName() + " checked in successfully.");
-            } else {
-                System.out.println("Patient is already checked in.");
-            }
-        } else {
+    public void checkInPatient(String input) {
+        LanPatient p = searchPatient(input);
+        if (p == null) {
             System.out.println("Patient not found.");
+            return;
+        }
+
+        if (p.isCheckedIn()) {
+            System.out.println("Already checked in.");
+        } else {
+            p.checkIn();
+            System.out.println("Checked in.");
         }
     }
 
-    // ----------------- APPOINTMENT METHODS -----------------
+    // ---------------- VALIDATION ----------------
+
+    private boolean isSlotAvailable(LocalDateTime time) {
+        for (LanAppointment a : appointments) {
+            if (a.getTime().equals(time)) return false;
+        }
+        return true;
+    }
+
+    private boolean hasAppointmentSameDay(String patientID, LocalDate date) {
+        for (LanAppointment a : appointments) {
+            if (a.getPatientID().equals(patientID)
+                    && a.getTime().toLocalDate().equals(date)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // ---------------- SCHEDULE ----------------
 
     public void scheduleAppointment(String patientID) {
+
         Scanner sc = new Scanner(System.in);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-        LocalDate today = LocalDate.now();
-        LocalDate maxDate = today.plusDays(7);
+        try {
 
-        System.out.println("Schedule an appointment for Patient ID: " + patientID);
-        System.out.println("Appointments can only be scheduled within the next 7 days.");
+            LocalDate today = LocalDate.now();
+            LocalDate maxDate = today.plusDays(7);
 
-        LocalDate chosenDate = null;
-        while (true) {
-            try {
-                System.out.print("Enter appointment date (yyyy-MM-dd): ");
-                String dateInput = sc.nextLine();
-                chosenDate = LocalDate.parse(dateInput, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            System.out.print("Enter date (yyyy-MM-dd): ");
+            LocalDate date = LocalDate.parse(sc.nextLine());
 
-                if (chosenDate.isBefore(today) || chosenDate.isAfter(maxDate)) {
-                    System.out.println("Date must be within the next 7 days!");
+            if (date.isBefore(today) || date.isAfter(maxDate)) {
+                System.out.println("Must be within 7 days.");
+                return;
+            }
+
+            if (hasAppointmentSameDay(patientID, date)) {
+                System.out.println("Already has appointment that day.");
+                return;
+            }
+
+            ArrayList<LocalDateTime> slots = new ArrayList<>();
+            LocalTime start = LocalTime.of(9,0);
+            LocalTime end = LocalTime.of(17,0);
+
+            while (!start.isAfter(end.minusMinutes(30))) {
+                slots.add(LocalDateTime.of(date, start));
+                start = start.plusMinutes(30);
+            }
+
+            System.out.println("\n--- Time Slots ---");
+            for (int i=0;i<slots.size();i++) {
+                LocalDateTime slot = slots.get(i);
+
+                if (isSlotAvailable(slot)) {
+                    System.out.println((i+1)+". "+slot.format(formatter)+" (Available)");
                 } else {
-                    break;
-                }
-            } catch (Exception e) {
-                System.out.println("Invalid date format.");
-            }
-        }
-
-        ArrayList<LocalDateTime> slots = new ArrayList<>();
-        LocalTime start = LocalTime.of(9, 0);
-        LocalTime end = LocalTime.of(17, 0);
-        while (!start.isAfter(end.minusMinutes(30))) {
-            slots.add(LocalDateTime.of(chosenDate, start));
-            start = start.plusMinutes(30);
-        }
-
-        ArrayList<LocalDateTime> availableSlots = new ArrayList<>();
-        for (LocalDateTime slot : slots) {
-            boolean taken = false;
-            for (LanAppointment a : appointments) {
-                if (a.getTime().equals(slot)) {
-                    taken = true;
-                    break;
+                    System.out.println((i+1)+". "+slot.format(formatter)+" (Taken)");
                 }
             }
-            if (!taken) availableSlots.add(slot);
-        }
 
-        if (availableSlots.isEmpty()) {
-            System.out.println("No available slots on this day. Choose another day.");
-            return;
-        }
+            System.out.print("Choose slot #: ");
+            int choice = Integer.parseInt(sc.nextLine());
 
-        System.out.println("Available time slots:");
-        int idx = 1;
-        for (LocalDateTime slot : availableSlots) {
-            System.out.println(idx + ". " + slot.format(formatter));
-            idx++;
-        }
+            if (choice < 1 || choice > slots.size()) return;
 
-        int slotChoice = -1;
-        while (true) {
-            try {
-                System.out.print("Select a slot number: ");
-                slotChoice = Integer.parseInt(sc.nextLine());
-                if (slotChoice < 1 || slotChoice > availableSlots.size()) {
-                    System.out.println("Invalid choice. Try again.");
-                } else {
-                    break;
+            LocalDateTime chosen = slots.get(choice-1);
+
+            if (isSlotAvailable(chosen)) {
+
+                appointments.add(new LanAppointment(patientID, chosen));
+                System.out.println("Appointment scheduled.");
+
+            } else {
+
+                System.out.print("Join waitlist? (Y/N): ");
+                String ans = sc.nextLine();
+
+                if (ans.equalsIgnoreCase("Y")) {
+                    waitlistMap.putIfAbsent(chosen, new LinkedList<>());
+                    waitlistMap.get(chosen).add(patientID);
+                    System.out.println("Added to waitlist.");
                 }
-            } catch (Exception e) {
-                System.out.println("Enter a valid number.");
             }
-        }
 
-        LanAppointment appointment = new LanAppointment(patientID, availableSlots.get(slotChoice - 1));
-        appointments.add(appointment);
-        System.out.println("Appointment scheduled for " + availableSlots.get(slotChoice - 1).format(formatter));
+        } catch (Exception e) {
+            System.out.println("Invalid input.");
+        }
     }
+
+    // ---------------- CANCEL ----------------
 
     public void cancelAppointment(String patientID) {
-        Scanner sc = new Scanner(System.in);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-        System.out.print("Enter appointment date/time to cancel (yyyy-MM-dd HH:mm): ");
-        String input = sc.nextLine();
+        Scanner sc = new Scanner(System.in);
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
         try {
-            LocalDateTime time = LocalDateTime.parse(input, formatter);
-            LanAppointment toRemove = null;
+
+            System.out.print("Enter date/time: ");
+            LocalDateTime time =
+                    LocalDateTime.parse(sc.nextLine(), formatter);
+
+            LanAppointment remove = null;
+
             for (LanAppointment a : appointments) {
-                if (a.getPatientID().equalsIgnoreCase(patientID) && a.getTime().equals(time)) {
-                    toRemove = a;
+                if (a.getPatientID().equals(patientID)
+                        && a.getTime().equals(time)) {
+                    remove = a;
                     break;
                 }
             }
-            if (toRemove != null) {
-                appointments.remove(toRemove);
-                System.out.println("Appointment cancelled successfully.");
-            } else {
-                System.out.println("Appointment not found.");
+
+            if (remove == null) {
+                System.out.println("Not found.");
+                return;
             }
+
+            appointments.remove(remove);
+            System.out.println("Cancelled.");
+
+            // WAITLIST AUTO FILL
+            if (waitlistMap.containsKey(time)) {
+
+                Queue<String> queue = waitlistMap.get(time);
+
+                if (!queue.isEmpty()) {
+
+                    String next = queue.poll();
+                    appointments.add(new LanAppointment(next, time));
+
+                    System.out.println("Waitlist patient auto-booked.");
+
+                    if (queue.isEmpty()) {
+                        waitlistMap.remove(time);
+                    }
+                }
+            }
+
         } catch (Exception e) {
-            System.out.println("Invalid date/time format.");
+            System.out.println("Invalid format.");
         }
     }
 
+    // ---------------- COMPLETE ----------------
+
+    public void completeAppointment(String patientID, LocalDateTime time) {
+
+        for (LanAppointment a : appointments) {
+
+            if (a.getPatientID().equals(patientID)
+                    && a.getTime().equals(time)) {
+
+                LanPatient p = searchPatient(patientID);
+
+                if (!p.isCheckedIn()) {
+                    System.out.println("Patient must check in first.");
+                    return;
+                }
+
+                a.complete();
+                p.checkOut();
+                System.out.println("Appointment completed.");
+                return;
+            }
+        }
+
+        System.out.println("Appointment not found.");
+    }
+
+    // ---------------- VIEW ----------------
+
     public void viewSchedule() {
+
         if (appointments.isEmpty()) {
-            System.out.println("No appointments scheduled.");
+            System.out.println("No appointments.");
             return;
         }
-        System.out.println("=== All Appointments ===");
+
+        appointments.sort(Comparator.comparing(LanAppointment::getTime));
+
         for (LanAppointment a : appointments) {
             System.out.println(a);
         }
     }
 
     public void dailySummary() {
-        System.out.println("=== Daily Summary ===");
-        System.out.println("Total Patients: " + patients.size());
-        int checkedIn = 0;
-        for (LanPatient p : patients) {
-            if (p.isCheckedIn()) checkedIn++;
-        }
-        System.out.println("Checked-in Patients: " + checkedIn);
-        System.out.println("Appointments Today: " + appointments.size());
+
+        LocalDate today = LocalDate.now();
+
+        int total = 0;
         int completed = 0;
+
         for (LanAppointment a : appointments) {
-            if (a.isCompleted()) completed++;
+            if (a.getTime().toLocalDate().equals(today)) {
+                total++;
+                if (a.isCompleted()) completed++;
+            }
         }
-        System.out.println("Completed Appointments: " + completed);
+
+        System.out.println("Appointments Today: " + total);
+        System.out.println("Completed Today: " + completed);
     }
 }
-

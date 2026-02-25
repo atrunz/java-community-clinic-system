@@ -1,35 +1,45 @@
 package org.codedifferently;
 
 import java.util.Scanner;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class LanClinicApp {
+
     public static void main(String[] args) {
 
         LanClinicSystem clinic = new LanClinicSystem();
         Scanner sc = new Scanner(System.in);
 
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
         boolean running = true;
 
         while (running) {
-            System.out.println("\n=== Community Clinic System ===");
-            System.out.println("1. Add Patient");
-            System.out.println("2. View All Patients");
-            System.out.println("3. Check-in Patient");
-            System.out.println("4. Search Patient");
-            System.out.println("5. Schedule Appointment");
-            System.out.println("6. Cancel Appointment");
-            System.out.println("7. View Schedule");
-            System.out.println("8. Daily Summary Report");
-            System.out.println("9. Exit");
-            System.out.print("Select option: ");
 
+            System.out.println("\n=== CLINIC MENU ===");
+            System.out.println("1 Add Patient");
+            System.out.println("2 View Patients");
+            System.out.println("3 Check In Patient");
+            System.out.println("4 Search Patient");
+            System.out.println("5 Schedule Appointment");
+            System.out.println("6 Cancel Appointment");
+            System.out.println("7 View Schedule");
+            System.out.println("8 Daily Report");
+            System.out.println("9 Exit");
+            System.out.println("10 Complete Appointment");
+
+
+            System.out.print("Choice: ");
+            System.out.println("===========================================1");
             String choice = sc.nextLine();
 
-            switch (choice) {
+            switch(choice) {
+
                 case "1":
-                    System.out.print("Enter patient name: ");
-                    String name = sc.nextLine();
-                    clinic.addPatient(name);
+                    System.out.print("Name: ");
+                    clinic.addPatient(sc.nextLine());
                     break;
 
                 case "2":
@@ -37,36 +47,26 @@ public class LanClinicApp {
                     break;
 
                 case "3":
-                    System.out.print("Enter patient ID or name: ");
-                    String checkInID = sc.nextLine();
-                    clinic.checkInPatient(checkInID);
+                    System.out.print("ID or Name: ");
+                    clinic.checkInPatient(sc.nextLine());
                     break;
 
                 case "4":
-                    System.out.print("Enter patient ID or name to search: ");
-                    String searchID = sc.nextLine();
-                    LanPatient patient = clinic.searchPatient(searchID);
-                    if (patient != null) {
-                        System.out.println(patient);
-                    } else {
-                        System.out.println("Patient not found.");
-                    }
+                    System.out.println("================================");
+                    System.out.print("ID or Name: ");
+                    System.out.println(clinic.searchPatient(sc.nextLine()));
                     break;
 
                 case "5":
-                    System.out.print("Enter patient ID: ");
-                    String pid = sc.nextLine();
-                    if (clinic.searchPatient(pid) != null) {
-                        clinic.scheduleAppointment(pid);
-                    } else {
-                        System.out.println("Patient not found. Please add the patient first.");
-                    }
+                    System.out.println("================================");
+                    System.out.print("Patient ID: ");
+                    clinic.scheduleAppointment(sc.nextLine());
                     break;
 
                 case "6":
-                    System.out.print("Enter patient ID: ");
-                    String cancelID = sc.nextLine();
-                    clinic.cancelAppointment(cancelID);
+                    System.out.println("=================================");
+                    System.out.print("Patient ID: ");
+                    clinic.cancelAppointment(sc.nextLine());
                     break;
 
                 case "7":
@@ -79,11 +79,24 @@ public class LanClinicApp {
 
                 case "9":
                     running = false;
-                    System.out.println("Exiting system...");
                     break;
 
-                default:
-                    System.out.println("Invalid option, try again.");
+                case "10":
+                    try {
+                        System.out.println("=============================");
+                        System.out.print("Patient ID: ");
+                        String id = sc.nextLine();
+
+                        System.out.print("DateTime yyyy-MM-dd HH:mm: ");
+                        LocalDateTime time =
+                                LocalDateTime.parse(sc.nextLine(), formatter);
+
+                        clinic.completeAppointment(id, time);
+
+                    } catch(Exception e) {
+                        System.out.println("Invalid format.");
+                    }
+                    break;
             }
         }
 
